@@ -1,0 +1,17 @@
+{
+  "name": "dbms-customer-relationship-management",
+  "version": "1.0.0",
+  "description": "Interactive and attractive DBMS project website for Customer Relationship Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "dbms",
+    "crm",
+    "oracle-sql",
+    "database-management"
+  ],
+  "author": "",
+  "license": "ISC"
+}

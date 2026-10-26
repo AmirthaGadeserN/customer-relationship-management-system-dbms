@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ApexCRM - Customer Relationship Management System (DBMS Project)</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['class', '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="flex flex-col min-h-screen">
+
+  <!-- Confetti Canvas -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Toast Notification Hub -->
+  <div id="toast-container"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="glass-header sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between border-b border-gray-800">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white font-black text-xl">
+          CRM
+        </div>
+        <div>
+          <h1 class="text-lg font-black tracking-tight text-white flex items-center gap-2">
+            ApexCRM
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+              DBMS Project
+            </span>
+          </h1>
+          <p class="text-xs text-gray-400">Customer Relationship Management Database</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="hidden md:flex items-center flex-1 max-w-md mx-8">
+      <div class="relative w-full">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </span>
+        <input type="text" id="global-search" class="form-control pl-10 pr-4 py-2 text-sm bg-gray-900/60 rounded-full border-gray-700/60" placeholder="Search orders, customers, products...">
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-3">
+      <button class="btn btn-primary btn-sm flex items-center gap-2 shadow-md" onclick="openOrderModal()">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        <span>+ New Booking</span>
+      </button>
+
+      <button class="btn btn-secondary btn-sm flex items-center gap-1.5" onclick="downloadOracleSQL()" title="Export SQL Script for Oracle Database">
+        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        <span class="hidden sm:inline">Export Oracle SQL</span>
+      </button>
+
+      <!-- Theme Switcher -->
+      <button class="btn-icon" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+        <svg id="theme-toggle-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- App Layout -->
+  <div class="flex flex-1">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar p-4 hidden md:flex flex-col justify-between">
+      <div class="space-y-6">
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-3 mb-2">Relational Tables</div>
+          <nav class="space-y-1">
+            <a href="#" class="nav-link active" data-view="dashboard">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+              <span>Dashboard</span>
+            </a>
+
+            <a href="#" class="nav-link" data-view="customers">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              <span>Customers</span>
+              <span id="badge-customers" class="nav-badge">0</span>
+            </a>
+
+            <a href="#" class="nav-link" data-view="employees">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <span>Employees</span>
+              <span id="badge-employees" class="nav-badge">0</span>
+            </a>
+
+            <a href="#" class="nav-link" data-view="products">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              <span>Products</span>
+              <span id="badge-products" class="nav-badge">0</span>
+            </a>
+
+            <a href="#" class="nav-link" data-view="orders">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+              <span>Orders & Bookings</span>
+              <span id="badge-orders" class="nav-badge">0</span>
+            </a>
+
+            <a href="#" class="nav-link" data-view="payments">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+              <span>Payments</span>
+              <span id="badge-payments" class="nav-badge">0</span>
+            </a>
+
+            <a href="#" class="nav-link" data-view="support">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              <span>Support Tickets</span>
+              <span id="badge-support" class="nav-badge">0</span>
+            </a>
+          </nav>
+        </div>
+
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-3 mb-2">DBMS Tools</div>
+          <nav class="space-y-1">
+            <a href="#" class="nav-link" data-view="sql-hub">
+              <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+              <span>Schema & SQL Console</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Quick Database Actions -->
+      <div class="p-3 rounded-xl bg-gray-900/60 border border-gray-800 space-y-2 text-xs">
+        <div class="font-bold text-gray-300">Local Database Storage</div>
+        <div class="flex gap-2">
+          <button class="btn btn-secondary btn-sm flex-1 text-[11px] py-1" onclick="exportDBAsJSON()" title="Export JSON backup">Backup</button>
+          <button class="btn btn-secondary btn-sm flex-1 text-[11px] py-1 text-red-400 hover:text-red-300" onclick="resetToDefaultDB()" title="Reset to Sample Data">Reset</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Body -->
+    <main class="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
+
+      <!-- ========================================================
+           VIEW: DASHBOARD
+           ======================================================== -->
+      <section id="view-dashboard" class="view-section space-y-8">
+        <!-- Welcome Hero -->
+        <div class="glass-panel p-6 relative overflow-hidden">
+          <div class="relative z-10">
+            <h2 class="text-2xl md:text-3xl font-black text-white tracking-tight">
+              Welcome to <span class="bg-gradient-to-r from-indigo-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">ApexCRM Database System</span>
+            </h2>
+            <p class="text-sm text-gray-400 mt-1 max-w-2xl">
+              An interactive relational database management solution connecting Customers, Products, Employees, Orders, Payments, and Customer Support in real-time.
+            </p>
+          </div>
+          <!-- Decorative Background Glow -->
+          <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        </div>
+
+        <!-- 4 KPI Stat Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div class="stat-card stat-indigo">
+            <div class="flex items-center justify-between text-gray-400 text-xs font-semibold uppercase tracking-wider">
+              <span>Gross Sales Revenue</span>
+              <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+            </div>
+            <div id="dash-stat-revenue" class="text-3xl font-black text-white mt-3">$0.00</div>
+            <div class="text-xs text-emerald-400 mt-2 font-medium flex items-center gap-1">
+              <span>Calculated from ORDERS(TOTAL_AMOUNT)</span>
+            </div>
+          </div>
+
+          <div class="stat-card stat-pink">
+            <div class="flex items-center justify-between text-gray-400 text-xs font-semibold uppercase tracking-wider">
+              <span>Total Bookings</span>
+              <div class="p-2 rounded-lg bg-pink-500/10 text-pink-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+              </div>
+            </div>
+            <div id="dash-stat-orders" class="text-3xl font-black text-white mt-3">0</div>
+            <div class="text-xs text-indigo-400 mt-2 font-medium">COUNT(BOOKING_ID) in ORDERS</div>
+          </div>
+
+          <div class="stat-card stat-cyan">
+            <div class="flex items-center justify-between text-gray-400 text-xs font-semibold uppercase tracking-wider">
+              <span>Active Customers</span>
+              <div class="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              </div>
+            </div>
+            <div id="dash-stat-customers" class="text-3xl font-black text-white mt-3">0</div>
+            <div class="text-xs text-cyan-400 mt-2 font-medium">COUNT(CUSTOMER_ID) in CUSTOMER</div>
+          </div>
+
+          <div class="stat-card stat-emerald">
+            <div class="flex items-center justify-between text-gray-400 text-xs font-semibold uppercase tracking-wider">
+              <span>Open Support Tickets</span>
+              <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+            </div>
+            <div id="dash-stat-tickets" class="text-3xl font-black text-white mt-3">0</div>
+            <div class="text-xs text-amber-400 mt-2 font-medium">Pending tickets requiring support</div>
+          </div>
+        </div>
+
+        <!-- Quick Action Shortcuts -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <button onclick="openOrderModal()" class="glass-panel p-4 text-left hover:scale-[1.02] transition flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-lg">+</div>
+            <div>
+              <div class="font-bold text-white text-sm">New Booking</div>
+              <div class="text-[11px] text-gray-400">Place Order with Calc</div>
+            </div>
+          </button>
+
+          <button onclick="openCustomerModal()" class="glass-panel p-4 text-left hover:scale-[1.02] transition flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-lg">+</div>
+            <div>
+              <div class="font-bold text-white text-sm">Add Customer</div>
+              <div class="text-[11px] text-gray-400">Register new client</div>
+            </div>
+          </button>
+
+          <button onclick="openProductModal()" class="glass-panel p-4 text-left hover:scale-[1.02] transition flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-lg">+</div>
+            <div>
+              <div class="font-bold text-white text-sm">Add Product</div>
+              <div class="text-[11px] text-gray-400">Inventory & Pricing</div>
+            </div>
+          </button>
+
+          <button onclick="openSupportModal()" class="glass-panel p-4 text-left hover:scale-[1.02] transition flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">+</div>
+            <div>
+              <div class="font-bold text-white text-sm">New Support Ticket</div>
+              <div class="text-[11px] text-gray-400">Log customer issue</div>
+            </div>
+          </button>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="glass-panel p-5">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-4 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+              Revenue by Product Category
+            </h3>
+            <div class="h-64 relative">
+              <canvas id="chartCategoryRevenue"></canvas>
+            </div>
+          </div>
+
+          <div class="glass-panel p-5">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-4 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-pink-500"></span>
+              Revenue Generation Trend
+            </h3>
+            <div class="h-64 relative">
+              <canvas id="chartRevenueTrend"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Row: Recent Bookings & Support Queue -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Recent Orders (2 Cols) -->
+          <div class="lg:col-span-2 glass-panel p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <span>Recent Bookings & Orders</span>
+                <span class="text-xs text-indigo-400 font-mono">(ORDERS Table)</span>
+              </h3>
+              <button class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold" onclick="navigateTo('orders')">View All &rarr;</button>
+            </div>
+            <div class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Booking ID</th>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-recent-orders">
+                  <!-- Populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Active Support Queue (1 Col) -->
+          <div class="glass-panel p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <span>Support Tickets</span>
+                <span class="text-xs text-cyan-400 font-mono">(SUPPORT)</span>
+              </h3>
+              <button class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold" onclick="navigateTo('support')">View All &rarr;</button>
+            </div>
+            <div id="dash-recent-tickets" class="space-y-3">
+              <!-- Populated by JavaScript -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           VIEW: CUSTOMERS
+           ======================================================== -->
+      <section id="view-customers" class="view-section space-y-6" style="display: none;">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-black text-white">Customer Directory</h2>
+            <p id="customers-count" class="text-xs text-gray-400 mt-0.5">Showing customers</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <input type="text" id="customer-search-input" class="form-control text-sm py-2 pl-9 pr-3 w-64 rounded-lg" placeholder="Search by name, email, phone...">
+              <span class="absolute left-3 top-2.5 text-gray-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </span>
+            </div>
+            <button class="btn btn-primary" onclick="openCustomerModal()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Add Customer
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-panel overflow-hidden">
+          <div class="table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>CUSTOMER_ID</th>
+                  <th>NAME</th>
+                  <th>PHONE</th>
+                  <th>EMAIL</th>
+                  <th>ADDRESS</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="customers-tbody">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           VIEW: EMPLOYEES
+           ======================================================== -->
+      <section id="view-employees" class="view-section space-y-6" style="display: none;">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-black text-white">Employee Roster</h2>
+            <p id="employees-count" class="text-xs text-gray-400 mt-0.5">Showing employees</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <select id="employee-dept-filter" class="form-control text-sm py-2 px-3 rounded-lg w-48">
+              <option value="ALL">All Departments</option>
+            </select>
+            <div class="relative">
+              <input type="text" id="employee-search-input" class="form-control text-sm py-2 pl-9 pr-3 w-56 rounded-lg" placeholder="Search employee...">
+              <span class="absolute left-3 top-2.5 text-gray-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </span>
+            </div>
+            <button class="btn btn-primary" onclick="openEmployeeModal()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Add Employee
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-panel overflow-hidden">
+          <div class="table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>EMPLOYEE_ID</th>
+                  <th>EMPLOYEE_NAME</th>
+                  <th>DEPARTMENT</th>
+                  <th>PHONE</th>
+                  <th>EMAIL</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="employees-tbody">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           VIEW: PRODUCTS
+           ======================================================== -->
+      <section id="view-products" class="view-section space-y-6" style="display: none;">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-black text-white">Product Inventory & Catalog</h2>
+            <p id="products-count" class="text-xs text-gray-400 mt-0.5">Showing products</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <select id="product-category-filter" class="form-control text-sm py-2 px-3 rounded-lg w-48">
+              <option value="ALL">All Categories</option>
+            </select>
+            <div class="relative">
+              <input type="text" id="product-search-input" class="form-control text-sm py-2 pl-9 pr-3 w-56 rounded-lg" placeholder="Search product...">
+              <span class="absolute left-3 top-2.5 text-gray-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </span>
+            </div>
+            <button class="btn btn-primary" onclick="openProductModal()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Add Product
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-panel overflow-hidden">
+          <div class="table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>PRODUCT_ID</th>
+                  <th>PRODUCT_NAME</th>
+                  <th>CATEGORY</th>
+                  <th>PRICE (USD)</th>
+                  <th>STOCK STATUS</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="products-tbody">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           VIEW: ORDERS & BOOKINGS
+           ======================================================== -->
+      <section id="view-orders" class="view-section space-y-6" style="display: none;">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-black text-white">Orders & Booking Management</h2>
+            <p id="orders-count" class="text-xs text-gray-400 mt-0.5">Showing bookings</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <input type="text" id="order-search-input" class="form-control text-sm py-2 pl-9 pr-3 w-64 rounded-lg" placeholder="Search booking, customer, product...">
+              <span class="absolute left-3 top-2.5 text-gray-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </span>
+            </div>
+            <button class="btn btn-primary" onclick="openOrderModal()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              + New Booking
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-panel overflow-hidden">
+          <div class="table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>BOOKING_ID</th>
+                  <th>CUSTOMER (NAME & ID)</th>
+                  <th>PRODUCT & UNIT PRICE</th>
+                  <th>QUANTITY</th>
+                  <th>TOTAL AMOUNT</th>
+                  <th>SALES REP (EMPLOYEE)</th>
+                  <th>PAYMENT STATUS</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="orders-tbody">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           VIEW: PAYMENTS
+           ======================================================== -->
+      <section id="view-payments" class="view-section space-y-6" style="display: none;">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-black text-white">Payment Transactions</h2>
+            <p id="payments-count" class="text-xs text-gray-400 mt-0.5">Showing payments</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <select id="payment-status-filter" class="form-control text-sm py-2 px-3 rounded-lg w-44">
+              <option value="ALL">All Statuses</option>
+              <option value="Completed">Completed</option>
+              <option value="Pending">Pending</option>
+            </select>
+            <div class="relative">
+              <input type="text" id="payment-search-input" class="form-control text-sm py-2 pl-9 pr-3 w-56 rounded-lg" placeholder="Search payment...">
+              <span class="absolute left-3 top-2.5 text-gray-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </span>
+            </div>
+            <button class="btn btn-primary" onclick="openPaymentModal()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Record Payment
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-panel overflow-hidden">
+          <div class="table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>PAYMENT_ID</th>
+                  <th>AMOUNT (USD)</th>
+                  <th>PAYMENT_DATE</th>
+                  <th>METHOD</th>
+                  <th>STATUS</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="payments-tbody">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           VIEW: SUPPORT TICKETS
+           ======================================================== -->
+      <section id="view-support" class="view-section space-y-6" style="display: none;">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-black text-white">Customer Support Tickets</h2>
+            <p id="support-count" class="text-xs text-gray-400 mt-0.5">Showing tickets</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <select id="support-status-filter" class="form-control text-sm py-2 px-3 rounded-lg w-44">
+              <option value="ALL">All Statuses</option>
+              <option value="Open">Open</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved</option>
+            </select>
+            <div class="relative">
+              <input type="text" id="support-search-input" class="form-control text-sm py-2 pl-9 pr-3 w-56 rounded-lg" placeholder="Search ticket issue...">
+              <span class="absolute left-3 top-2.5 text-gray-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </span>
+            </div>
+            <button class="btn btn-primary" onclick="openSupportModal()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Open Ticket
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-panel overflow-hidden">
+          <div class="table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>TICKET_ID</th>
+                  <th>ISSUE DESCRIPTION</th>
+                  <th>CUSTOMER</th>
+                  <th>STATUS (QUICK TOGGLE)</th>
+                  <th>OPEN_DATE</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="support-tbody">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           VIEW: DATABASE & SQL HUB
+           ======================================================== -->
+      <section id="view-sql-hub" class="view-section space-y-8" style="display: none;">
+        <!-- Hub Banner -->
+        <div class="glass-panel p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-black text-white">Relational Database & SQL Console</h2>
+            <p class="text-sm text-gray-400 mt-1">
+              Visual Entity-Relationship representation of the 6 tables with live multi-table JOIN query execution.
+            </p>
+          </div>
+          <button class="btn btn-primary" onclick="downloadOracleSQL()">
+            <svg class="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download Oracle SQL Dump (.sql)
+          </button>
+        </div>
+
+        <!-- Entity Relationship Diagram Cards -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span>Entity-Relationship Architecture</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">6 Tables &amp; Foreign Keys</span>
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Node: CUSTOMER -->
+            <div class="er-node">
+              <div class="er-node-header bg-indigo-950/60 text-indigo-300 border-b border-indigo-500/20">
+                <span>TABLE: CUSTOMER</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-indigo-500/30 rounded font-mono">Master</span>
+              </div>
+              <div class="p-3.5 font-mono text-xs space-y-1.5">
+                <div class="flex items-center justify-between text-amber-300 font-bold">
+                  <span>🔑 CUSTOMER_ID</span>
+                  <span class="text-gray-400 font-normal">NUMBER (PK)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>NAME</span>
+                  <span class="text-gray-500">VARCHAR2(30)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>PHONE</span>
+                  <span class="text-gray-500">VARCHAR2(15)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>EMAIL</span>
+                  <span class="text-gray-500">VARCHAR2(50)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>ADDRESS</span>
+                  <span class="text-gray-500">VARCHAR2(50)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Node: EMPLOYEE -->
+            <div class="er-node">
+              <div class="er-node-header bg-pink-950/60 text-pink-300 border-b border-pink-500/20">
+                <span>TABLE: EMPLOYEE</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-pink-500/30 rounded font-mono">Master</span>
+              </div>
+              <div class="p-3.5 font-mono text-xs space-y-1.5">
+                <div class="flex items-center justify-between text-amber-300 font-bold">
+                  <span>🔑 EMPLOYEE_ID</span>
+                  <span class="text-gray-400 font-normal">NUMBER (PK)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>EMPLOYEE_NAME</span>
+                  <span class="text-gray-500">VARCHAR2(50)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>DEPARTMENT</span>
+                  <span class="text-gray-500">VARCHAR2(50)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>PHONE</span>
+                  <span class="text-gray-500">VARCHAR2(15)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>EMAIL</span>
+                  <span class="text-gray-500">VARCHAR2(50)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Node: PRODUCT -->
+            <div class="er-node">
+              <div class="er-node-header bg-cyan-950/60 text-cyan-300 border-b border-cyan-500/20">
+                <span>TABLE: PRODUCT</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-cyan-500/30 rounded font-mono">Master</span>
+              </div>
+              <div class="p-3.5 font-mono text-xs space-y-1.5">
+                <div class="flex items-center justify-between text-amber-300 font-bold">
+                  <span>🔑 PRODUCT_ID</span>
+                  <span class="text-gray-400 font-normal">NUMBER (PK)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>PRODUCT_NAME</span>
+                  <span class="text-gray-500">VARCHAR2(30)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>CATEGORY</span>
+                  <span class="text-gray-500">VARCHAR2(30)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>PRICE</span>
+                  <span class="text-gray-500">NUMBER(10,2)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>STOCK</span>
+                  <span class="text-gray-500">NUMBER</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Node: PAYMENT -->
+            <div class="er-node">
+              <div class="er-node-header bg-emerald-950/60 text-emerald-300 border-b border-emerald-500/20">
+                <span>TABLE: PAYMENT</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/30 rounded font-mono">Master</span>
+              </div>
+              <div class="p-3.5 font-mono text-xs space-y-1.5">
+                <div class="flex items-center justify-between text-amber-300 font-bold">
+                  <span>🔑 PAYMENT_ID</span>
+                  <span class="text-gray-400 font-normal">NUMBER (PK)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>AMOUNT</span>
+                  <span class="text-gray-500">NUMBER(10,2)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>PAYMENT_DATE</span>
+                  <span class="text-gray-500">DATE</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>PAYMENT_METHOD</span>
+                  <span class="text-gray-500">VARCHAR2(30)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>PAYMENT_STATUS</span>
+                  <span class="text-gray-500">VARCHAR2(30)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Node: ORDERS (Central Hub) -->
+            <div class="er-node border-indigo-500/50 shadow-indigo-500/10 shadow-lg">
+              <div class="er-node-header bg-indigo-900/60 text-white border-b border-indigo-500/40">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  TABLE: ORDERS
+                </span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-indigo-500 rounded font-mono">Central Relational Hub</span>
+              </div>
+              <div class="p-3.5 font-mono text-xs space-y-1.5">
+                <div class="flex items-center justify-between text-amber-300 font-bold">
+                  <span>🔑 BOOKING_ID</span>
+                  <span class="text-gray-400 font-normal">NUMBER (PK)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>ORDER_DATE</span>
+                  <span class="text-gray-500">DATE</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>QUANTITY</span>
+                  <span class="text-gray-500">NUMBER</span>
+                </div>
+                <div class="flex items-center justify-between text-emerald-400 font-semibold">
+                  <span>TOTAL_AMOUNT</span>
+                  <span class="text-gray-500">NUMBER(10,2)</span>
+                </div>
+                <div class="flex items-center justify-between text-cyan-300">
+                  <span>🔗 CUSTOMER_ID</span>
+                  <span class="text-gray-500">FK &rarr; CUSTOMER</span>
+                </div>
+                <div class="flex items-center justify-between text-pink-300">
+                  <span>🔗 EMPLOYEE_ID</span>
+                  <span class="text-gray-500">FK &rarr; EMPLOYEE</span>
+                </div>
+                <div class="flex items-center justify-between text-cyan-300">
+                  <span>🔗 PRODUCT_ID</span>
+                  <span class="text-gray-500">FK &rarr; PRODUCT</span>
+                </div>
+                <div class="flex items-center justify-between text-emerald-300">
+                  <span>🔗 PAYMENT_ID</span>
+                  <span class="text-gray-500">FK &rarr; PAYMENT</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Node: SUPPORT -->
+            <div class="er-node">
+              <div class="er-node-header bg-purple-950/60 text-purple-300 border-b border-purple-500/20">
+                <span>TABLE: SUPPORT</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-purple-500/30 rounded font-mono">Service</span>
+              </div>
+              <div class="p-3.5 font-mono text-xs space-y-1.5">
+                <div class="flex items-center justify-between text-amber-300 font-bold">
+                  <span>🔑 TICKET_ID</span>
+                  <span class="text-gray-400 font-normal">NUMBER (PK)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>ISSUE</span>
+                  <span class="text-gray-500">VARCHAR2(100)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>STATUS</span>
+                  <span class="text-gray-500">VARCHAR2(30)</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-300">
+                  <span>OPEN_DATE</span>
+                  <span class="text-gray-500">DATE</span>
+                </div>
+                <div class="flex items-center justify-between text-cyan-300">
+                  <span>🔗 CUSTOMER_ID</span>
+                  <span class="text-gray-500">FK &rarr; CUSTOMER</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SQL Console Section -->
+        <div class="glass-panel p-6 space-y-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-bold text-white">Live Relational Query Runner</h3>
+              <p class="text-xs text-gray-400">Select a DBMS evaluation query to test foreign-key joins in real time.</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <select id="sql-preset-select" class="form-control text-sm py-2 px-3 rounded-lg w-72">
+                <!-- Preset options populated dynamically -->
+              </select>
+              <button class="btn btn-primary btn-sm flex items-center gap-1.5" onclick="executeActiveQuery()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+                Run Query
+              </button>
+            </div>
+          </div>
+
+          <!-- Code Display Box -->
+          <div class="sql-terminal">
+            <pre id="sql-query-display" class="whitespace-pre-wrap"></pre>
+          </div>
+
+          <!-- Query Results Table -->
+          <div>
+            <h4 class="text-sm font-bold text-gray-300 mb-2">Query Execution Results:</h4>
+            <div id="sql-results-container">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========================================================
+       MODAL DIALOGS
+       ======================================================== -->
+
+  <!-- 1. Customer Modal -->
+  <div id="modal-customer" class="modal-overlay">
+    <div class="modal-box p-6 space-y-5">
+      <div class="flex items-center justify-between border-b border-gray-700/60 pb-3">
+        <h3 id="modal-customer-title" class="text-lg font-bold text-white">Add Customer</h3>
+        <button class="text-gray-400 hover:text-white text-xl" onclick="closeModal('modal-customer')">&times;</button>
+      </div>
+
+      <form id="form-customer" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">CUSTOMER_ID (PK) *</label>
+            <input type="number" id="cust-id" class="form-control" required placeholder="e.g. 106">
+          </div>
+          <div class="form-group">
+            <label class="form-label">NAME *</label>
+            <input type="text" id="cust-name" class="form-control" required placeholder="Customer Full Name">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">PHONE *</label>
+            <input type="tel" id="cust-phone" class="form-control" required placeholder="+1-555-0199">
+          </div>
+          <div class="form-group">
+            <label class="form-label">EMAIL *</label>
+            <input type="email" id="cust-email" class="form-control" required placeholder="name@domain.com">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ADDRESS *</label>
+          <input type="text" id="cust-address" class="form-control" required placeholder="Street, City, State">
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-gray-700/60">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-customer')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Employee Modal -->
+  <div id="modal-employee" class="modal-overlay">
+    <div class="modal-box p-6 space-y-5">
+      <div class="flex items-center justify-between border-b border-gray-700/60 pb-3">
+        <h3 id="modal-employee-title" class="text-lg font-bold text-white">Add Employee</h3>
+        <button class="text-gray-400 hover:text-white text-xl" onclick="closeModal('modal-employee')">&times;</button>
+      </div>
+
+      <form id="form-employee" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">EMPLOYEE_ID (PK) *</label>
+            <input type="number" id="emp-id" class="form-control" required placeholder="e.g. 206">
+          </div>
+          <div class="form-group">
+            <label class="form-label">EMPLOYEE_NAME *</label>
+            <input type="text" id="emp-name" class="form-control" required placeholder="Full Name">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">DEPARTMENT *</label>
+          <input type="text" id="emp-dept" class="form-control" required placeholder="Enterprise Sales, Customer Support, etc.">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">PHONE *</label>
+            <input type="tel" id="emp-phone" class="form-control" required placeholder="+1-555-1109">
+          </div>
+          <div class="form-group">
+            <label class="form-label">EMAIL *</label>
+            <input type="email" id="emp-email" class="form-control" required placeholder="emp@apexcrm.internal">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-gray-700/60">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-employee')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Employee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Product Modal -->
+  <div id="modal-product" class="modal-overlay">
+    <div class="modal-box p-6 space-y-5">
+      <div class="flex items-center justify-between border-b border-gray-700/60 pb-3">
+        <h3 id="modal-product-title" class="text-lg font-bold text-white">Add Product</h3>
+        <button class="text-gray-400 hover:text-white text-xl" onclick="closeModal('modal-product')">&times;</button>
+      </div>
+
+      <form id="form-product" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">PRODUCT_ID (PK) *</label>
+            <input type="number" id="prod-id" class="form-control" required placeholder="e.g. 307">
+          </div>
+          <div class="form-group">
+            <label class="form-label">PRODUCT_NAME *</label>
+            <input type="text" id="prod-name" class="form-control" required placeholder="Product Title">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">CATEGORY *</label>
+          <input type="text" id="prod-category" class="form-control" required placeholder="Software, Cloud, Hardware, Service">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">PRICE (USD) *</label>
+            <input type="number" step="0.01" id="prod-price" class="form-control" required placeholder="499.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">STOCK COUNT *</label>
+            <input type="number" id="prod-stock" class="form-control" required placeholder="50">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-gray-700/60">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-product')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Interactive Order & Booking Modal (Key Highlight of the Request!) -->
+  <div id="modal-order" class="modal-overlay">
+    <div class="modal-box p-6 space-y-5 max-w-2xl">
+      <div class="flex items-center justify-between border-b border-gray-700/60 pb-3">
+        <div>
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span>Create New Booking / Order</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-mono">ORDERS Table</span>
+          </h3>
+          <p class="text-xs text-gray-400">Select customer, choose product, and live calculate the total amount.</p>
+        </div>
+        <button class="text-gray-400 hover:text-white text-xl" onclick="closeModal('modal-order')">&times;</button>
+      </div>
+
+      <form id="form-order" class="space-y-4">
+        <!-- Row 1: Booking ID & Order Date -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">BOOKING_ID (PK) *</label>
+            <input type="number" id="order-booking-id" class="form-control font-mono font-bold text-indigo-400" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ORDER_DATE *</label>
+            <input type="date" id="order-date" class="form-control" required>
+          </div>
+        </div>
+
+        <!-- Row 2: Customer Selection -->
+        <div class="form-group">
+          <label class="form-label flex items-center justify-between">
+            <span>SELECT CUSTOMER (FK: CUSTOMER_ID) *</span>
+            <button type="button" class="text-xs text-indigo-400 hover:underline" onclick="openCustomerModal()">+ Register New</button>
+          </label>
+          <select id="order-cust-id" class="form-control" required>
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <!-- Row 3: Product Selection -->
+        <div class="form-group">
+          <label class="form-label">SELECT PRODUCT (FK: PRODUCT_ID) *</label>
+          <select id="order-prod-id" class="form-control" required>
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <!-- Live Price & Quantity Calculation Panel -->
+        <div class="calc-highlight">
+          <div class="grid grid-cols-3 gap-4 items-center">
+            <div>
+              <div class="text-xs text-gray-400 uppercase font-semibold">Unit Price</div>
+              <div id="order-calc-unit-price" class="text-lg font-bold text-white mt-1">$0.00</div>
+              <div id="order-calc-stock" class="text-[11px] text-gray-400 mt-0.5">0 in stock</div>
+            </div>
+
+            <div>
+              <label class="text-xs text-gray-400 uppercase font-semibold block mb-1">QUANTITY *</label>
+              <input type="number" id="order-qty" class="form-control text-center font-bold text-lg py-1.5" min="1" max="999" value="1" required>
+            </div>
+
+            <div class="text-right">
+              <div class="text-xs text-indigo-300 uppercase font-semibold">Total Amount (Live)</div>
+              <div id="order-calc-total" class="text-2xl font-black text-emerald-400 mt-1">$0.00</div>
+              <input type="hidden" id="order-total-amount-hidden" value="0.00">
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 4: Sales Employee (Rep) -->
+        <div class="form-group">
+          <label class="form-label">HANDLED BY EMPLOYEE (FK: EMPLOYEE_ID) *</label>
+          <select id="order-emp-id" class="form-control" required>
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <!-- Row 5: Payment Processing (Auto-generate linked PAYMENT) -->
+        <div class="p-3.5 rounded-lg bg-gray-900/60 border border-gray-700/50 space-y-3">
+          <div class="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center justify-between">
+            <span>Payment Transaction (FK: PAYMENT_ID)</span>
+            <span class="text-[10px] text-gray-400">Auto-Generates Payment Record</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="form-label text-[11px]">PAYMENT_ID</label>
+              <input type="number" id="order-new-pay-id" class="form-control text-xs font-mono font-bold" required>
+            </div>
+
+            <div>
+              <label class="form-label text-[11px]">METHOD</label>
+              <select id="order-pay-method" class="form-control text-xs">
+                <option value="Credit Card">Credit Card</option>
+                <option value="UPI / Net Banking">UPI / Net Banking</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Corporate Wire">Corporate Wire</option>
+                <option value="Cash / Cheque">Cash / Cheque</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label text-[11px]">PAYMENT STATUS</label>
+              <select id="order-pay-status" class="form-control text-xs">
+                <option value="Completed">Completed</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-gray-700/60">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-order')">Cancel</button>
+          <button type="submit" class="btn btn-primary flex items-center gap-2">
+            <span>Confirm Booking &amp; Generate Invoice</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Payment Modal -->
+  <div id="modal-payment" class="modal-overlay">
+    <div class="modal-box p-6 space-y-5">
+      <div class="flex items-center justify-between border-b border-gray-700/60 pb-3">
+        <h3 id="modal-payment-title" class="text-lg font-bold text-white">Record Payment</h3>
+        <button class="text-gray-400 hover:text-white text-xl" onclick="closeModal('modal-payment')">&times;</button>
+      </div>
+
+      <form id="form-payment" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">PAYMENT_ID (PK) *</label>
+            <input type="number" id="pay-id" class="form-control" required placeholder="e.g. 506">
+          </div>
+          <div class="form-group">
+            <label class="form-label">AMOUNT (USD) *</label>
+            <input type="number" step="0.01" id="pay-amount" class="form-control font-bold text-emerald-400" required placeholder="499.00">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">PAYMENT_DATE *</label>
+            <input type="date" id="pay-date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">PAYMENT_METHOD *</label>
+            <select id="pay-method" class="form-control">
+              <option value="Credit Card">Credit Card</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="UPI / Net Banking">UPI / Net Banking</option>
+              <option value="Corporate Wire">Corporate Wire</option>
+              <option value="Cash / Cheque">Cash / Cheque</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">PAYMENT_STATUS *</label>
+          <select id="pay-status" class="form-control">
+            <option value="Completed">Completed</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-gray-700/60">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-payment')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. Support Ticket Modal -->
+  <div id="modal-support" class="modal-overlay">
+    <div class="modal-box p-6 space-y-5">
+      <div class="flex items-center justify-between border-b border-gray-700/60 pb-3">
+        <h3 id="modal-support-title" class="text-lg font-bold text-white">Log Support Ticket</h3>
+        <button class="text-gray-400 hover:text-white text-xl" onclick="closeModal('modal-support')">&times;</button>
+      </div>
+
+      <form id="form-support" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">TICKET_ID (PK) *</label>
+            <input type="number" id="ticket-id" class="form-control font-mono" required placeholder="e.g. 705">
+          </div>
+          <div class="form-group">
+            <label class="form-label">OPEN_DATE *</label>
+            <input type="date" id="ticket-date" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">CUSTOMER (FK: CUSTOMER_ID) *</label>
+          <select id="support-cust-id" class="form-control" required>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ISSUE DESCRIPTION (VARCHAR2 100) *</label>
+          <textarea id="ticket-issue" class="form-control" rows="3" maxlength="100" required placeholder="Describe the customer support issue..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">STATUS *</label>
+          <select id="ticket-status" class="form-control">
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-gray-700/60">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-support')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Ticket</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 7. Universal Details & Printable Invoice Modal -->
+  <div id="modal-details" class="modal-overlay">
+    <div class="modal-box p-6 space-y-4 max-w-3xl">
+      <div class="flex items-center justify-between border-b border-gray-700/60 pb-3">
+        <h3 id="modal-details-title" class="text-lg font-bold text-white">Record Details</h3>
+        <button class="text-gray-400 hover:text-white text-xl" onclick="closeModal('modal-details')">&times;</button>
+      </div>
+      <div id="modal-details-content">
+        <!-- Injected dynamically by JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
